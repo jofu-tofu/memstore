@@ -1,0 +1,53 @@
+{
+  "name": "memstore",
+  "version": "1.0.0",
+  "description": "Memory system for Claude Code with pluggable providers",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    },
+    "./hooks/*": "./src/hooks/*.ts",
+    "./api": "./src/api/index.ts",
+    "./core": "./src/core/index.ts",
+    "./lib": "./src/lib/index.ts",
+    "./providers": "./src/providers/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "test:unit": "bun test src/",
+    "test:integration": "bun test tests/",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "files": [
+    "index.ts",
+    "src/**/*.ts",
+    "!**/*.test.ts"
+  ],
+  "keywords": [
+    "memory",
+    "claude-code",
+    "ai",
+    "session-management",
+    "retrieval"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1"
+  }
+}

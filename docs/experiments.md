@@ -2,7 +2,7 @@
 
 **Story 5.4 | Epic 5: Platform Extensibility**
 
-The PAI Memory System A/B testing framework enables data-driven experimentation for comparing different provider implementations. Run controlled experiments, collect comparative metrics, and make evidence-based decisions about which approaches work best.
+The MemStore A/B testing framework enables data-driven experimentation for comparing different provider implementations. Run controlled experiments, collect comparative metrics, and make evidence-based decisions about which approaches work best.
 
 ---
 
@@ -44,7 +44,7 @@ A/B testing (also called split testing) compares two or more variants of an impl
 - **Deterministic Variant Assignment**: Same request always gets same variant (consistent UX)
 - **Multi-Variant Support**: Test 2+ variants simultaneously
 - **Statistical Analysis**: Automatic significance testing, percentile distributions
-- **Graceful Degradation**: Experiment failures don't break PAI
+- **Graceful Degradation**: Experiment failures don't break Claude Code
 - **Performance Optimized**: <10ms overhead per request
 - **Privacy-Preserving**: Stores query hashes, not full query text
 - **Export Friendly**: JSON and CSV export for external analysis
@@ -76,10 +76,10 @@ Add to your `.claude/settings.json`:
 
 ### 2. Run Retrievals
 
-Use PAI normally. The framework automatically:
+Use Claude Code normally. The framework automatically:
 - Assigns each retrieval to a variant
 - Logs performance data
-- Stores results in `$PAI_DIR/mem-store/metrics/experiments/search-comparison.jsonl`
+- Stores results in `$MEMSTORE_DIR/mem-store/metrics/experiments/search-comparison.jsonl`
 
 ### 3. Analyze Results
 
@@ -245,7 +245,7 @@ Each retrieval logs an **ExperimentDataPoint**:
 ```
 
 Data is stored in **append-only JSONL** format:
-- File: `$PAI_DIR/mem-store/metrics/experiments/{experiment-id}.jsonl`
+- File: `$MEMSTORE_DIR/mem-store/metrics/experiments/{experiment-id}.jsonl`
 - Format: One JSON object per line
 - Performance: Fire-and-forget async append (<5ms overhead)
 
@@ -448,7 +448,7 @@ For 3+ variants, the framework calculates statistics for all variants but **does
 
 **Run Experiment:**
 ```typescript
-// Use PAI normally for 100+ retrievals
+// Use Claude Code normally for 100+ retrievals
 // Framework automatically logs data
 ```
 
@@ -545,7 +545,7 @@ Statistical Comparison:
 
 **Run Experiment:**
 ```typescript
-// Use PAI normally for 500+ retrievals
+// Use Claude Code normally for 500+ retrievals
 // Ensures ~200 control, ~100 each treatment
 ```
 
@@ -870,7 +870,7 @@ if (result.ok) {
 1. Is `enabled: true` in config?
 2. Does experiment ID contain provider type (`search`, `ranking`)?
 3. Are provider names valid? Check registry.
-4. Is config cached? Restart PAI to reload.
+4. Is config cached? Restart Claude Code to reload.
 
 **Solution:**
 ```typescript
@@ -892,16 +892,16 @@ clearConfigCache();
 **Checks:**
 1. Is experiment running? (enabled: true)
 2. Have any retrievals occurred?
-3. Is PAI_DIR correct? Check `$PAI_DIR/mem-store/metrics/experiments/`
+3. Is MEMSTORE_DIR correct? Check `$MEMSTORE_DIR/mem-store/metrics/experiments/`
 4. Are there file permission issues?
 
 **Solution:**
 ```bash
 # Check data directory
-ls "$PAI_DIR/mem-store/metrics/experiments/"
+ls "$MEMSTORE_DIR/mem-store/metrics/experiments/"
 
 # Check file permissions
-ls -la "$PAI_DIR/mem-store/metrics/experiments/*.jsonl"
+ls -la "$MEMSTORE_DIR/mem-store/metrics/experiments/*.jsonl"
 ```
 
 ---
@@ -1010,17 +1010,17 @@ console.log(`Treatment: ${counts.treatment} (${counts.treatment / 10}%)`);
 **Symptom:** `EXPERIMENT_NOT_FOUND` or `EXPERIMENT_DATA_READ_FAILED`
 
 **Checks:**
-1. Does JSONL file exist? `$PAI_DIR/mem-store/metrics/experiments/{id}.jsonl`
+1. Does JSONL file exist? `$MEMSTORE_DIR/mem-store/metrics/experiments/{id}.jsonl`
 2. Is file readable? Check permissions
 3. Is file corrupted? Try opening in text editor
 
 **Solution:**
 ```bash
 # Check file exists
-ls "$PAI_DIR/mem-store/metrics/experiments/search-test.jsonl"
+ls "$MEMSTORE_DIR/mem-store/metrics/experiments/search-test.jsonl"
 
 # Check file contents
-cat "$PAI_DIR/mem-store/metrics/experiments/search-test.jsonl" | head -5
+cat "$MEMSTORE_DIR/mem-store/metrics/experiments/search-test.jsonl" | head -5
 ```
 
 ---
@@ -1105,7 +1105,7 @@ for (const [day, variants] of Object.entries(byDay)) {
 
 ## Conclusion
 
-The A/B testing framework enables **data-driven experimentation** for the PAI Memory System. Use it to:
+The A/B testing framework enables **data-driven experimentation** for MemStore. Use it to:
 
 ✅ Compare provider implementations objectively
 ✅ Measure real-world performance, not guesses
@@ -1115,7 +1115,7 @@ The A/B testing framework enables **data-driven experimentation** for the PAI Me
 **Next Steps:**
 1. Design your first experiment (start simple: 2 variants)
 2. Configure in `.claude/settings.json`
-3. Run PAI normally to collect data (100+ requests)
+3. Run Claude Code normally to collect data (100+ requests)
 4. Analyze results and make decision
 5. Roll out winner to production
 

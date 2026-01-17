@@ -11,23 +11,23 @@ import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { join } from 'path';
 import { mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
-import { selectVariant } from '../core/experiment';
-import { logExperimentResult } from '../lib/logging/experiment-logger';
-import type { ExperimentConfig } from '../core/config';
+import { selectVariant } from '../src/core/experiment';
+import { logExperimentResult } from '../src/lib/logging/experiment-logger';
+import type { ExperimentConfig } from '../src/core/config';
 
-const TEST_DIR = join(homedir(), 'pai-test-experiment-performance');
+const TEST_DIR = join(homedir(), '.memstore-test-experiment-performance');
 const METRICS_DIR = join(TEST_DIR, 'mem-store/metrics/experiments');
 
 beforeAll(() => {
   mkdirSync(METRICS_DIR, { recursive: true });
-  process.env.PAI_DIR = TEST_DIR;
+  process.env.MEMSTORE_DIR = TEST_DIR;
 });
 
 afterAll(() => {
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true, force: true });
   }
-  delete process.env.PAI_DIR;
+  delete process.env.MEMSTORE_DIR;
 });
 
 describe('Variant Selection Performance (Task 10.4)', () => {

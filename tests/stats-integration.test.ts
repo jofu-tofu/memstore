@@ -3,20 +3,20 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { spawn } from 'bun';
-import { getStats } from '../lib/logging/stats-manager';
+import { getStats } from '../src/lib/logging/stats-manager';
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-stats-integration');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-stats-integration');
 
 describe('Stats Integration Tests (Story 4.3)', () => {
   beforeEach(() => {
     // Create test directory
-    mkdirSync(TEST_PAI_DIR, { recursive: true });
+    mkdirSync(TEST_MEMSTORE_DIR, { recursive: true });
 
     // Create necessary subdirectories
-    mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'metrics'), { recursive: true });
-    mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'queue'), { recursive: true });
-    mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'segments'), { recursive: true });
-    mkdirSync(join(TEST_PAI_DIR, '.claude'), { recursive: true });
+    mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics'), { recursive: true });
+    mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'queue'), { recursive: true });
+    mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'segments'), { recursive: true });
+    mkdirSync(join(TEST_MEMSTORE_DIR, '.claude'), { recursive: true });
 
     // Create minimal settings file
     const settings = {
@@ -29,15 +29,15 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       },
     };
     writeFileSync(
-      join(TEST_PAI_DIR, '.claude', 'settings.json'),
+      join(TEST_MEMSTORE_DIR, '.claude', 'settings.json'),
       JSON.stringify(settings, null, 2)
     );
   });
 
   afterEach(() => {
     // Clean up test directory
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
@@ -56,7 +56,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+        env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       });
 
       proc.stdin.write(payload);
@@ -68,9 +68,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Assert: Stats file should exist and have updated capture stats
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
       const result = getStats();
-      delete process.env.PAI_DIR;
+      delete process.env.MEMSTORE_DIR;
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -91,7 +91,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+        env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       });
 
       proc.stdin.write(invalidPayload);
@@ -103,9 +103,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Assert: Error count should be incremented
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
       const result = getStats();
-      delete process.env.PAI_DIR;
+      delete process.env.MEMSTORE_DIR;
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -118,9 +118,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
   describe('Retrieval Hook Stats (AC2, AC3)', () => {
     test('should update retrieval stats when hook completes', async () => {
       // Arrange: Ensure all necessary directories exist for retrieval hook
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'structured'), { recursive: true });
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'indexes', 'keyword'), { recursive: true });
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'cache'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'indexes', 'keyword'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'cache'), { recursive: true });
 
       const retrievePath = join(process.cwd(), 'hooks', 'memory', 'retrieve.ts');
       const payload = JSON.stringify({
@@ -133,7 +133,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+        env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       });
 
       proc.stdin.write(payload);
@@ -148,9 +148,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       let statsReady = false;
       for (let i = 0; i < 10; i++) {
         await new Promise((resolve) => setTimeout(resolve, 200));
-        process.env.PAI_DIR = TEST_PAI_DIR;
+        process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
         const testResult = getStats();
-        delete process.env.PAI_DIR;
+        delete process.env.MEMSTORE_DIR;
         if (testResult.ok && testResult.value.retrieval.totalCount > 0) {
           statsReady = true;
           break;
@@ -158,13 +158,13 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       }
 
       // Assert: Stats file should have retrieval data
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
       const result = getStats();
-      delete process.env.PAI_DIR;
+      delete process.env.MEMSTORE_DIR;
 
       // Debug output if test fails
       if (!statsReady) {
-        const statsPath = join(TEST_PAI_DIR, 'mem-store', 'metrics', 'stats.json');
+        const statsPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics', 'stats.json');
         console.error(`\n=== DEBUGGING STATS FAILURE ===`);
         console.error(`Stats file path: ${statsPath}`);
         console.error(`Stats file exists: ${existsSync(statsPath)}`);
@@ -195,9 +195,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       // Here we just verify the budget threshold is read from config.
 
       // Arrange: Ensure all necessary directories exist
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'structured'), { recursive: true });
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'indexes', 'keyword'), { recursive: true });
-      mkdirSync(join(TEST_PAI_DIR, 'mem-store', 'cache'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'indexes', 'keyword'), { recursive: true });
+      mkdirSync(join(TEST_MEMSTORE_DIR, 'mem-store', 'cache'), { recursive: true });
 
       // Update config to have very low budget (1ms)
       const settings = {
@@ -212,7 +212,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         },
       };
       writeFileSync(
-        join(TEST_PAI_DIR, '.claude', 'settings.json'),
+        join(TEST_MEMSTORE_DIR, '.claude', 'settings.json'),
         JSON.stringify(settings, null, 2)
       );
 
@@ -227,7 +227,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+        env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       });
 
       proc.stdin.write(payload);
@@ -242,9 +242,9 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       let statsReady = false;
       for (let i = 0; i < 10; i++) {
         await new Promise((resolve) => setTimeout(resolve, 200));
-        process.env.PAI_DIR = TEST_PAI_DIR;
+        process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
         const testResult = getStats();
-        delete process.env.PAI_DIR;
+        delete process.env.MEMSTORE_DIR;
         if (testResult.ok && testResult.value.retrieval.totalCount > 0) {
           statsReady = true;
           break;
@@ -252,13 +252,13 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       }
 
       // Assert: Should have detected budget exceeded (1ms is too low)
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
       const result = getStats();
-      delete process.env.PAI_DIR;
+      delete process.env.MEMSTORE_DIR;
 
       // Debug output if test fails
       if (!statsReady) {
-        const statsPath = join(TEST_PAI_DIR, 'mem-store', 'metrics', 'stats.json');
+        const statsPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics', 'stats.json');
         console.error(`\n=== DEBUGGING STATS FAILURE ===`);
         console.error(`Stats file path: ${statsPath}`);
         console.error(`Stats file exists: ${existsSync(statsPath)}`);
@@ -294,7 +294,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+        env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       });
 
       proc.stdin.write(payload);
@@ -304,7 +304,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Assert: Check file structure
-      const statsPath = join(TEST_PAI_DIR, 'mem-store', 'metrics', 'stats.json');
+      const statsPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics', 'stats.json');
       expect(existsSync(statsPath)).toBe(true);
 
       // Read and verify JSON structure
@@ -344,7 +344,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
     test('should not block capture hook if stats update fails', async () => {
       // Arrange: Make metrics directory read-only (skip on Windows)
       if (process.platform !== 'win32') {
-        const metricsDir = join(TEST_PAI_DIR, 'mem-store', 'metrics');
+        const metricsDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics');
         const fs = require('fs');
         fs.chmodSync(metricsDir, 0o444); // Read-only
 
@@ -359,7 +359,7 @@ describe('Stats Integration Tests (Story 4.3)', () => {
           stdin: 'pipe',
           stdout: 'pipe',
           stderr: 'pipe',
-          env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+          env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
         });
 
         proc.stdin.write(payload);

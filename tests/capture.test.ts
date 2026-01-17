@@ -4,7 +4,7 @@ import { homedir } from 'os';
 import { mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-capture-toggle');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-capture-toggle');
 
 /**
  * Helper: Execute capture.ts hook and return exit code + stderr
@@ -14,10 +14,10 @@ function runCaptureHook(
 ): Promise<{ exitCode: number; stderr: string; executionTime: number }> {
   return new Promise((resolve) => {
     const startTime = Date.now();
-    const capturePath = join(__dirname, '..', 'capture.ts');
+    const capturePath = join(__dirname, '..', 'src', 'hooks', 'capture.ts');
 
     const proc = spawn('bun', ['run', capturePath], {
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -42,13 +42,13 @@ function runCaptureHook(
  */
 function ensureMemStoreDirectories() {
   const dirs = [
-    join(TEST_PAI_DIR, 'mem-store'),
-    join(TEST_PAI_DIR, 'mem-store', 'segments'),
-    join(TEST_PAI_DIR, 'mem-store', 'structured'),
-    join(TEST_PAI_DIR, 'mem-store', 'indexes', 'keyword'),
-    join(TEST_PAI_DIR, 'mem-store', 'queue'),
-    join(TEST_PAI_DIR, 'mem-store', 'metrics'),
-    join(TEST_PAI_DIR, 'mem-store', 'cache')
+    join(TEST_MEMSTORE_DIR, 'mem-store'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'segments'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'indexes', 'keyword'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'queue'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'metrics'),
+    join(TEST_MEMSTORE_DIR, 'mem-store', 'cache')
   ];
   for (const dir of dirs) {
     mkdirSync(dir, { recursive: true });
@@ -59,7 +59,7 @@ function ensureMemStoreDirectories() {
  * Helper: Create settings.json with specific memory.enabled value
  */
 function createSettings(enabled: boolean) {
-  const settingsDir = join(TEST_PAI_DIR, '.claude');
+  const settingsDir = join(TEST_MEMSTORE_DIR, '.claude');
   mkdirSync(settingsDir, { recursive: true });
 
   const settings = {
@@ -87,7 +87,7 @@ function createHookSettings(config: {
   userPromptSubmit?: boolean;
   sessionStart?: boolean;
 }) {
-  const settingsDir = join(TEST_PAI_DIR, '.claude');
+  const settingsDir = join(TEST_MEMSTORE_DIR, '.claude');
   mkdirSync(settingsDir, { recursive: true });
 
   const settings = {
@@ -114,16 +114,16 @@ function createHookSettings(config: {
 describe('capture.ts - memory system toggle', () => {
   beforeAll(() => {
     // Clean slate
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
-    mkdirSync(TEST_PAI_DIR, { recursive: true });
+    mkdirSync(TEST_MEMSTORE_DIR, { recursive: true });
   });
 
   afterAll(() => {
     // ALWAYS clean up
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
@@ -147,7 +147,7 @@ describe('capture.ts - memory system toggle', () => {
     expect(result.stderr).toContain('exiting');
 
     // Assert: Directory may exist (Story 3.6 ensureMemStoreDirectories), but no queue files created
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     if (existsSync(queueDir)) {
       const fs = require('fs');
       const files = fs.readdirSync(queueDir).filter((f: string) => f.endsWith('.json'));
@@ -173,7 +173,7 @@ describe('capture.ts - memory system toggle', () => {
     expect(result.exitCode).toBe(0);
 
     // Assert: Queue file created
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     expect(existsSync(queueDir)).toBe(true);
 
     // Verify queue file exists (filename format: {timestamp}_{sessionId}.json)
@@ -234,16 +234,16 @@ describe('capture.ts - memory system toggle', () => {
 describe('capture.ts - hook-specific toggle (Story 3.3)', () => {
   beforeAll(() => {
     // Clean slate
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
-    mkdirSync(TEST_PAI_DIR, { recursive: true });
+    mkdirSync(TEST_MEMSTORE_DIR, { recursive: true });
   });
 
   afterAll(() => {
     // ALWAYS clean up
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
@@ -274,7 +274,7 @@ describe('capture.ts - hook-specific toggle (Story 3.3)', () => {
     expect(result.stderr).not.toContain('Memory system disabled');
 
     // Assert: Directory may exist (Story 3.6 ensureMemStoreDirectories), but no queue files created
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     if (existsSync(queueDir)) {
       const fs = require('fs');
       const files = fs.readdirSync(queueDir).filter((f: string) => f.endsWith('.json'));
@@ -307,7 +307,7 @@ describe('capture.ts - hook-specific toggle (Story 3.3)', () => {
     expect(result.stderr).not.toContain('disabled');
 
     // Assert: Queue file created
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     expect(existsSync(queueDir)).toBe(true);
   });
 

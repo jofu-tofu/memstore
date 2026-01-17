@@ -9,26 +9,26 @@ import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { join } from 'path';
 import { homedir } from 'os';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'fs';
-import { RetrievalLogEntry } from '../lib/logging/retrieval-logger';
-import { resetSearchProvider } from '../core/retrieval';
-import { clearConfigCache } from '../core/config';
-import { globalProviderRegistry } from '../core/provider-registry';
-import { registerMVPProviders, resetProvidersRegistered } from '../core/register-providers';
+import { RetrievalLogEntry } from '../src/lib/logging/retrieval-logger';
+import { resetSearchProvider } from '../src/core/retrieval';
+import { clearConfigCache } from '../src/core/config';
+import { globalProviderRegistry } from '../src/core/provider-registry';
+import { registerMVPProviders, resetProvidersRegistered } from '../src/core/register-providers';
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-retrieval-integration');
-const METRICS_DIR = join(TEST_PAI_DIR, 'mem-store/metrics');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-retrieval-integration');
+const METRICS_DIR = join(TEST_MEMSTORE_DIR, 'mem-store/metrics');
 const LOG_PATH = join(METRICS_DIR, 'retrieval-log.jsonl');
-const SEGMENTS_DIR = join(TEST_PAI_DIR, 'mem-store/segments/2026-01');
-const INDEX_DIR = join(TEST_PAI_DIR, 'mem-store/indexes/keyword');
+const SEGMENTS_DIR = join(TEST_MEMSTORE_DIR, 'mem-store/segments/2026-01');
+const INDEX_DIR = join(TEST_MEMSTORE_DIR, 'mem-store/indexes/keyword');
 
 describe('Retrieval Integration - Story 4.1', () => {
   const now = Date.now();
 
   beforeAll(() => {
     // Set up test environment
-    process.env.PAI_DIR = TEST_PAI_DIR;
+    process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
-    // Reset caches to ensure fresh provider initialization with new PAI_DIR
+    // Reset caches to ensure fresh provider initialization with new MEMSTORE_DIR
     clearConfigCache();
     resetSearchProvider();
 
@@ -61,7 +61,7 @@ This is a test segment for integration testing of retrieval logging.`;
     writeFileSync(join(INDEX_DIR, 'keyword-index.json'), JSON.stringify(index), 'utf-8');
 
     // Create settings file
-    const settingsDir = join(TEST_PAI_DIR, 'settings');
+    const settingsDir = join(TEST_MEMSTORE_DIR, 'settings');
     mkdirSync(settingsDir, { recursive: true });
     const settings = {
       memory: {
@@ -74,10 +74,10 @@ This is a test segment for integration testing of retrieval logging.`;
   });
 
   afterAll(() => {
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
-    delete process.env.PAI_DIR;
+    delete process.env.MEMSTORE_DIR;
   });
 
   test('should create retrieval log after successful retrieval', async () => {
@@ -212,14 +212,14 @@ This is a test segment for integration testing of retrieval logging.`;
  * - No-results diagnostic appears when appropriate
  */
 describe('Debug Mode Integration - Story 4.6', () => {
-  const TEST_DEBUG_DIR = join(homedir(), 'pai-test-debug-integration');
+  const TEST_DEBUG_DIR = join(homedir(), '.memstore-test-debug-integration');
   const TEST_SETTINGS_PATH = join(TEST_DEBUG_DIR, '.claude', 'settings.json');
 
   beforeAll(() => {
     // Create test directory structure
-    process.env.PAI_DIR = TEST_DEBUG_DIR;
+    process.env.MEMSTORE_DIR = TEST_DEBUG_DIR;
 
-    // Reset caches to ensure fresh provider initialization with new PAI_DIR
+    // Reset caches to ensure fresh provider initialization with new MEMSTORE_DIR
     clearConfigCache();
     resetSearchProvider();
 
@@ -263,7 +263,7 @@ Debug mode integration test segment.`;
     if (existsSync(TEST_DEBUG_DIR)) {
       rmSync(TEST_DEBUG_DIR, { recursive: true, force: true });
     }
-    delete process.env.PAI_DIR;
+    delete process.env.MEMSTORE_DIR;
   });
 
   test('should log debug info throughout pipeline when debug mode enabled', async () => {
@@ -305,7 +305,7 @@ Debug mode integration test segment.`;
 
       // Use keyword search provider directly for this test
       const { KeywordSearch } = await import('../providers/search/keyword-search');
-      const provider = new KeywordSearch({ paiDir: TEST_DEBUG_DIR });
+      const provider = new KeywordSearch({ memstoreDir: TEST_DEBUG_DIR });
       await provider.initialize();
 
       const result = await provider.search('typescript debug', {
@@ -369,7 +369,7 @@ Debug mode integration test segment.`;
 
       // Use keyword search provider directly
       const { KeywordSearch } = await import('../providers/search/keyword-search');
-      const provider = new KeywordSearch({ paiDir: TEST_DEBUG_DIR });
+      const provider = new KeywordSearch({ memstoreDir: TEST_DEBUG_DIR });
       await provider.initialize();
 
       const result = await provider.search('typescript debug', {
@@ -404,16 +404,16 @@ Debug mode integration test segment.`;
  * - Performance overhead validation (<10ms)
  */
 describe('Experiment Integration - Story 5.4', () => {
-  const TEST_EXP_DIR = join(homedir(), 'pai-test-experiment-integration');
+  const TEST_EXP_DIR = join(homedir(), '.memstore-test-experiment-integration');
   const EXP_METRICS_DIR = join(TEST_EXP_DIR, 'mem-store/metrics/experiments');
   const SEGMENTS_DIR = join(TEST_EXP_DIR, 'mem-store/segments/2026-01'); // Year-month format required
   const INDEX_PATH = join(TEST_EXP_DIR, 'mem-store/indexes/keyword/index.json'); // Must match keyword-search.ts
 
   beforeAll(() => {
     // Set up test environment
-    process.env.PAI_DIR = TEST_EXP_DIR;
+    process.env.MEMSTORE_DIR = TEST_EXP_DIR;
 
-    // Reset caches to ensure fresh provider initialization with new PAI_DIR
+    // Reset caches to ensure fresh provider initialization with new MEMSTORE_DIR
     clearConfigCache();
     resetSearchProvider();
 
@@ -502,7 +502,7 @@ Another test segment for validating experiment functionality.`;
     if (existsSync(TEST_EXP_DIR)) {
       rmSync(TEST_EXP_DIR, { recursive: true, force: true });
     }
-    delete process.env.PAI_DIR;
+    delete process.env.MEMSTORE_DIR;
   });
 
   test('should retrieve normally when no experiments configured (AC5)', async () => {

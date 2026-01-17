@@ -16,15 +16,15 @@ import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:tes
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
-import { getDebugMode, clearConfigCache, getMemoryConfig } from '../core/config';
+import { getDebugMode, clearConfigCache, getMemoryConfig } from '../src/core/config';
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-debug-integration');
-const TEST_SETTINGS_PATH = join(TEST_PAI_DIR, '.claude', 'settings.json');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-debug-integration');
+const TEST_SETTINGS_PATH = join(TEST_MEMSTORE_DIR, '.claude', 'settings.json');
 
 describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
   beforeAll(() => {
     // Create test directory structure
-    mkdirSync(join(TEST_PAI_DIR, '.claude'), { recursive: true });
+    mkdirSync(join(TEST_MEMSTORE_DIR, '.claude'), { recursive: true });
   });
 
   beforeEach(() => {
@@ -34,8 +34,8 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
   afterAll(() => {
     // Clean up test artifacts
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
@@ -51,14 +51,14 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(debugConfig, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act
       const debugMode = await getDebugMode();
       const configResult = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Debug mode should be enabled
       expect(debugMode).toBe(true);
@@ -79,13 +79,13 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(noDebugConfig, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act
       const debugMode = await getDebugMode();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Debug mode should be disabled
       expect(debugMode).toBe(false);
@@ -105,14 +105,14 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(oldConfig, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act
       const debugMode = await getDebugMode();
       const configResult = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Should default to false
       expect(debugMode).toBe(false);
@@ -126,13 +126,13 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
       // Arrange: Invalid JSON
       writeFileSync(TEST_SETTINGS_PATH, '{ invalid json }');
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act
       const debugMode = await getDebugMode();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Should return false (graceful degradation)
       expect(debugMode).toBe(false);
@@ -151,8 +151,8 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(debugConfig, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act: Simulate what retrieve.ts does
       const debugMode = await getDebugMode();
@@ -163,7 +163,7 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
         maxResults: 10,
       };
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Flag loaded correctly and can be used in options
       expect(retrievalOptions.debug).toBe(true);
@@ -176,8 +176,8 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
         rmSync(TEST_SETTINGS_PATH);
       }
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act
       const debugMode = await getDebugMode();
@@ -187,7 +187,7 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
         maxResults: 5,
       };
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Debug flag defaults to false
       expect(searchOptions.debug).toBe(false);
@@ -206,8 +206,8 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act: Measure getDebugMode() performance
       const iterations = 100;
@@ -220,7 +220,7 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
       const elapsedMs = Date.now() - startTime;
       const avgMs = elapsedMs / iterations;
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Should be very fast (<5ms per call due to caching)
       expect(avgMs).toBeLessThan(5);
@@ -237,8 +237,8 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       // Act: Call getDebugMode twice
       const start1 = Date.now();
@@ -249,7 +249,7 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
       const result2 = await getDebugMode();
       const time2 = Date.now() - start2;
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       // Assert: Both return same value
       expect(result1).toBe(true);
@@ -270,12 +270,12 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       const result = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -292,12 +292,12 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       const result = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -314,12 +314,12 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       const result = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -336,12 +336,12 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       const result = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -360,12 +360,12 @@ describe('Debug Mode Configuration Integration (Story 4.6.1)', () => {
 
       writeFileSync(TEST_SETTINGS_PATH, JSON.stringify(config, null, 2));
 
-      const originalPaiDir = process.env.PAI_DIR;
-      process.env.PAI_DIR = TEST_PAI_DIR;
+      const originalMemstoreDir = process.env.MEMSTORE_DIR;
+      process.env.MEMSTORE_DIR = TEST_MEMSTORE_DIR;
 
       const result = await getMemoryConfig();
 
-      process.env.PAI_DIR = originalPaiDir;
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
 
       expect(result.ok).toBe(false);
       if (!result.ok) {

@@ -11,20 +11,20 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
 import { homedir } from 'os';
 import { mkdirSync, writeFileSync, existsSync, rmSync } from 'fs';
-import { updateUsageSignals } from '../lib/usage-tracker';
-import { rankResults } from '../core/ranking';
-import type { FilterResult } from '../types/filters';
+import { updateUsageSignals } from '../src/lib/usage-tracker';
+import { rankResults } from '../src/core/ranking';
+import type { FilterResult } from '../src/types/filters';
 
 describe('Decay + Reinforcement Integration (Use-It-Or-Lose-It)', () => {
-  let testPaiDir: string;
+  let testMemstoreDir: string;
 
   beforeEach(() => {
     // Create isolated test directory
-    testPaiDir = join(homedir(), 'pai-test-decay-reinforcement');
-    mkdirSync(testPaiDir, { recursive: true });
-    process.env.PAI_DIR = testPaiDir;
+    testMemstoreDir = join(homedir(), '.memstore-test-decay-reinforcement');
+    mkdirSync(testMemstoreDir, { recursive: true });
+    process.env.MEMSTORE_DIR = testMemstoreDir;
 
-    const segmentsDir = join(testPaiDir, 'mem-store', 'segments', '2026-01');
+    const segmentsDir = join(testMemstoreDir, 'mem-store', 'segments', '2026-01');
     mkdirSync(segmentsDir, { recursive: true });
 
     const now = Date.now();
@@ -83,10 +83,10 @@ Never accessed segment.`;
   });
 
   afterEach(() => {
-    if (existsSync(testPaiDir)) {
-      rmSync(testPaiDir, { recursive: true, force: true });
+    if (existsSync(testMemstoreDir)) {
+      rmSync(testMemstoreDir, { recursive: true, force: true });
     }
-    delete process.env.PAI_DIR;
+    delete process.env.MEMSTORE_DIR;
   });
 
   test('should implement use-it-or-lose-it pattern (AC6)', async () => {

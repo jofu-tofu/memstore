@@ -13,21 +13,21 @@ import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { join } from 'path';
 import { mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
-import { startExperiment, stopExperiment, listExperiments } from '../lib/experiment-lifecycle';
-import { aggregateExperimentData, exportExperimentResults } from '../lib/experiment-analyzer';
-import { logExperimentResult } from '../lib/logging/experiment-logger';
-import { selectVariant } from '../core/experiment';
-import type { ExperimentConfig } from '../core/config';
-import type { ExperimentDataPoint } from '../lib/logging/experiment-logger';
+import { startExperiment, stopExperiment, listExperiments } from '../src/lib/analytics/experiment-lifecycle';
+import { aggregateExperimentData, exportExperimentResults } from '../src/lib/analytics/experiment-analyzer';
+import { logExperimentResult } from '../src/lib/logging/experiment-logger';
+import { selectVariant } from '../src/core/experiment';
+import type { ExperimentConfig } from '../src/core/config';
+import type { ExperimentDataPoint } from '../src/lib/logging/experiment-logger';
 
-const TEST_DIR = join(homedir(), 'pai-test-experiment-e2e');
+const TEST_DIR = join(homedir(), '.memstore-test-experiment-e2e');
 const METRICS_DIR = join(TEST_DIR, 'mem-store/metrics/experiments');
 const CLAUDE_DIR = join(TEST_DIR, '.claude');
 
 beforeAll(() => {
   mkdirSync(METRICS_DIR, { recursive: true });
   mkdirSync(CLAUDE_DIR, { recursive: true });
-  process.env.PAI_DIR = TEST_DIR;
+  process.env.MEMSTORE_DIR = TEST_DIR;
 
   // Create settings.json with experiment configuration
   const settingsPath = join(CLAUDE_DIR, 'settings.json');
@@ -68,7 +68,7 @@ afterAll(() => {
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true, force: true });
   }
-  delete process.env.PAI_DIR;
+  delete process.env.MEMSTORE_DIR;
 });
 
 describe('End-to-End Experiment Flow (Task 12.1)', () => {

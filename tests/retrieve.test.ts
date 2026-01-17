@@ -5,21 +5,21 @@ import { existsSync, rmSync, mkdirSync, writeFileSync } from 'fs';
 import { spawn } from 'bun';
 import { fileURLToPath } from 'url';
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-retrieve');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-retrieve');
 
 // Get the directory containing this test file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const HOOK_PATH = join(__dirname, '..', 'retrieve.ts');
+const HOOK_PATH = join(__dirname, '..', 'src', 'hooks', 'retrieve.ts');
 
 describe('retrieve.ts hook', () => {
   beforeAll(() => {
-    mkdirSync(TEST_PAI_DIR, { recursive: true });
+    mkdirSync(TEST_MEMSTORE_DIR, { recursive: true });
   });
 
   afterAll(() => {
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
@@ -35,7 +35,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -57,7 +57,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.end(); // Empty input
@@ -77,7 +77,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write('not valid json{{{');
@@ -106,7 +106,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -131,7 +131,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -156,7 +156,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -181,7 +181,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -207,7 +207,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write(payload);
@@ -219,15 +219,15 @@ describe('retrieve.ts hook', () => {
     expect(exitCode).toBe(0);
   });
 
-  test('should support PAI_DIR environment variable', async () => {
-    const customPaiDir = join(homedir(), 'pai-test-custom');
-    mkdirSync(customPaiDir, { recursive: true });
+  test('should support MEMSTORE_DIR environment variable', async () => {
+    const customMemstoreDir = join(homedir(), '.memstore-test-custom');
+    mkdirSync(customMemstoreDir, { recursive: true });
 
     try {
       const hookPath = HOOK_PATH;
 
       const payload = JSON.stringify({
-        prompt: 'Test PAI_DIR support'
+        prompt: 'Test MEMSTORE_DIR support'
       });
 
       const proc = spawn({
@@ -235,7 +235,7 @@ describe('retrieve.ts hook', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: customPaiDir }
+        env: { ...process.env, MEMSTORE_DIR: customMemstoreDir }
       });
 
       proc.stdin.write(payload);
@@ -244,8 +244,8 @@ describe('retrieve.ts hook', () => {
       const exitCode = await proc.exited;
       expect(exitCode).toBe(0);
     } finally {
-      if (existsSync(customPaiDir)) {
-        rmSync(customPaiDir, { recursive: true, force: true });
+      if (existsSync(customMemstoreDir)) {
+        rmSync(customMemstoreDir, { recursive: true, force: true });
       }
     }
   });
@@ -258,7 +258,7 @@ describe('retrieve.ts hook', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR }
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR }
     });
 
     proc.stdin.write('   \n\t  ');
@@ -275,8 +275,8 @@ describe('retrieve.ts hook', () => {
 /**
  * Helper: Create settings.json with specific memory.enabled value
  */
-function createSettings(paiDir: string, enabled: boolean) {
-  const settingsDir = join(paiDir, '.claude');
+function createSettings(memstoreDir: string, enabled: boolean) {
+  const settingsDir = join(memstoreDir, '.claude');
   mkdirSync(settingsDir, { recursive: true });
 
   const settings = {
@@ -295,13 +295,13 @@ function createSettings(paiDir: string, enabled: boolean) {
 /**
  * Helper: Create settings.json with hook-specific config
  */
-function createHookSettings(paiDir: string, config: {
+function createHookSettings(memstoreDir: string, config: {
   enabled: boolean;
   sessionEnd?: boolean;
   userPromptSubmit?: boolean;
   sessionStart?: boolean;
 }) {
-  const settingsDir = join(paiDir, '.claude');
+  const settingsDir = join(memstoreDir, '.claude');
   mkdirSync(settingsDir, { recursive: true });
 
   const settings = {
@@ -323,7 +323,7 @@ function createHookSettings(paiDir: string, config: {
 }
 
 describe('retrieve.ts - memory system toggle', () => {
-  const TOGGLE_TEST_DIR = join(homedir(), 'pai-test-retrieve-toggle');
+  const TOGGLE_TEST_DIR = join(homedir(), '.memstore-test-retrieve-toggle');
 
   beforeAll(() => {
     // Clean slate for toggle tests
@@ -354,7 +354,7 @@ describe('retrieve.ts - memory system toggle', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -385,7 +385,7 @@ describe('retrieve.ts - memory system toggle', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -416,7 +416,7 @@ describe('retrieve.ts - memory system toggle', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -445,7 +445,7 @@ describe('retrieve.ts - memory system toggle', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -463,9 +463,9 @@ describe('retrieve.ts - memory system toggle', () => {
 
   test('should use defaults when no settings file exists', async () => {
     // Arrange: No settings.json (triggers default behavior)
-    // Create PAI dir but don't create settings.json
+    // Create MemStore dir but don't create settings.json
 
-    const noSettingsDir = join(homedir(), 'pai-test-retrieve-no-settings');
+    const noSettingsDir = join(homedir(), '.memstore-test-retrieve-no-settings');
     if (existsSync(noSettingsDir)) {
       rmSync(noSettingsDir, { recursive: true, force: true });
     }
@@ -482,7 +482,7 @@ describe('retrieve.ts - memory system toggle', () => {
         stdin: 'pipe',
         stdout: 'pipe',
         stderr: 'pipe',
-        env: { ...process.env, PAI_DIR: noSettingsDir },
+        env: { ...process.env, MEMSTORE_DIR: noSettingsDir },
       });
 
       proc.stdin.write(payload);
@@ -510,7 +510,7 @@ describe('retrieve.ts - memory system toggle', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TOGGLE_TEST_DIR },
     });
 
     proc.stdin.end(); // Empty input
@@ -527,7 +527,7 @@ describe('retrieve.ts - memory system toggle', () => {
 });
 
 describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
-  const HOOK_TOGGLE_TEST_DIR = join(homedir(), 'pai-test-retrieve-hook-toggle');
+  const HOOK_TOGGLE_TEST_DIR = join(homedir(), '.memstore-test-retrieve-hook-toggle');
 
   beforeAll(() => {
     // Clean slate
@@ -562,7 +562,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -606,7 +606,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -640,7 +640,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -674,7 +674,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -705,7 +705,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);
@@ -742,7 +742,7 @@ describe('retrieve.ts - hook-specific toggle (Story 3.3)', () => {
       stdin: 'pipe',
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...process.env, PAI_DIR: HOOK_TOGGLE_TEST_DIR },
+      env: { ...process.env, MEMSTORE_DIR: HOOK_TOGGLE_TEST_DIR },
     });
 
     proc.stdin.write(payload);

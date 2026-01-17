@@ -10,15 +10,15 @@ import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { join } from 'path';
 import { promises as fs } from 'fs';
 import { existsSync } from 'fs';
-import { retrieveMemories, resetSearchProvider } from '../core/retrieval';
-import { FileBackend } from '../providers/storage/file-backend';
-import { getUsageStats, resetStorageInstance } from '../lib/usage-tracker';
-import { clearConfigCache } from '../core/config';
-import { globalProviderRegistry } from '../core/provider-registry';
-import { registerMVPProviders, resetProvidersRegistered } from '../core/register-providers';
-import type { MemorySegment } from '../types/segment';
+import { retrieveMemories, resetSearchProvider } from '../src/core/retrieval';
+import { FileBackend } from '../src/providers/storage/file-backend';
+import { getUsageStats, resetStorageInstance } from '../src/lib/usage-tracker';
+import { clearConfigCache } from '../src/core/config';
+import { globalProviderRegistry } from '../src/core/provider-registry';
+import { registerMVPProviders, resetProvidersRegistered } from '../src/core/register-providers';
+import type { MemorySegment } from '../src/types/segment';
 
-const testPaiDir = join(
+const testMemstoreDir = join(
   process.cwd(),
   'tests',
   `usage-integration-${Date.now()}`
@@ -29,10 +29,10 @@ describe('Usage Tracking Integration', () => {
 
   beforeAll(async () => {
     // Create isolated test directory
-    await fs.mkdir(testPaiDir, { recursive: true });
-    process.env.PAI_DIR = testPaiDir;
+    await fs.mkdir(testMemstoreDir, { recursive: true });
+    process.env.MEMSTORE_DIR = testMemstoreDir;
 
-    // Reset all caches to ensure fresh provider initialization with new PAI_DIR
+    // Reset all caches to ensure fresh provider initialization with new MEMSTORE_DIR
     clearConfigCache();
     resetSearchProvider();
     resetStorageInstance();
@@ -43,7 +43,7 @@ describe('Usage Tracking Integration', () => {
     registerMVPProviders();
 
     // Initialize storage
-    storage = new FileBackend({ storePath: testPaiDir });
+    storage = new FileBackend({ storePath: testMemstoreDir });
     await storage.initialize();
 
     // Create test segments
@@ -107,10 +107,10 @@ describe('Usage Tracking Integration', () => {
     resetStorageInstance();
 
     // Clean up test directory
-    if (existsSync(testPaiDir)) {
-      await fs.rm(testPaiDir, { recursive: true, force: true });
+    if (existsSync(testMemstoreDir)) {
+      await fs.rm(testMemstoreDir, { recursive: true, force: true });
     }
-    delete process.env.PAI_DIR;
+    delete process.env.MEMSTORE_DIR;
   });
 
   test('should increment accessCount when segment is retrieved', async () => {
@@ -185,22 +185,22 @@ describe('Usage Tracking Integration', () => {
 
   test('should rank segments by actual access counts in usage stats', async () => {
     // Clear test data and create new segments with known access patterns
-    const freshPaiDir = join(
+    const freshMemstoreDir = join(
       process.cwd(),
       'tests',
       `usage-ranking-${Date.now()}`
     );
-    await fs.mkdir(freshPaiDir, { recursive: true });
+    await fs.mkdir(freshMemstoreDir, { recursive: true });
 
-    const oldPaiDir = process.env.PAI_DIR;
-    process.env.PAI_DIR = freshPaiDir;
+    const oldMemstoreDir = process.env.MEMSTORE_DIR;
+    process.env.MEMSTORE_DIR = freshMemstoreDir;
 
-    // Reset all caches to ensure fresh provider initialization with new PAI_DIR
+    // Reset all caches to ensure fresh provider initialization with new MEMSTORE_DIR
     clearConfigCache();
     resetSearchProvider();
     resetStorageInstance();
 
-    const freshStorage = new FileBackend({ storePath: freshPaiDir });
+    const freshStorage = new FileBackend({ storePath: freshMemstoreDir });
     await freshStorage.initialize();
 
     // Create segments with different access counts
@@ -263,12 +263,12 @@ describe('Usage Tracking Integration', () => {
       }
     }
 
-    // Cleanup - reset PAI_DIR and all caches to original state
-    process.env.PAI_DIR = oldPaiDir;
+    // Cleanup - reset MEMSTORE_DIR and all caches to original state
+    process.env.MEMSTORE_DIR = oldMemstoreDir;
     clearConfigCache();
     resetSearchProvider();
     resetStorageInstance();
-    await fs.rm(freshPaiDir, { recursive: true, force: true });
+    await fs.rm(freshMemstoreDir, { recursive: true, force: true });
   });
 
   test('should provide accurate total retrievals count', async () => {

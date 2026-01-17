@@ -10,29 +10,29 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const TEST_PAI_DIR = join(homedir(), 'pai-test-queue-processor');
+const TEST_MEMSTORE_DIR = join(homedir(), '.memstore-test-queue-processor');
 
 describe('process-queue.ts', () => {
   beforeEach(async () => {
     // Clean slate for each test
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
-    mkdirSync(TEST_PAI_DIR, { recursive: true });
+    mkdirSync(TEST_MEMSTORE_DIR, { recursive: true });
 
     // Create queue directory
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     await fs.mkdir(queueDir, { recursive: true });
   });
 
   afterAll(() => {
-    if (existsSync(TEST_PAI_DIR)) {
-      rmSync(TEST_PAI_DIR, { recursive: true, force: true });
+    if (existsSync(TEST_MEMSTORE_DIR)) {
+      rmSync(TEST_MEMSTORE_DIR, { recursive: true, force: true });
     }
   });
 
   test('should acquire lock and process single queue item successfully', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create test queue item
     const queueItem = {
@@ -47,10 +47,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -75,7 +75,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should exit immediately if lock already held (AC: 2)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     const lockFile = join(queueDir, '.processor.lock');
 
     // Create a fresh lock
@@ -86,10 +86,10 @@ describe('process-queue.ts', () => {
     }), 'utf-8');
 
     // Try to run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -102,7 +102,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should take over stale lock (>60s old) (AC: 1, 9)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     const lockFile = join(queueDir, '.processor.lock');
 
     // Create a stale lock (70 seconds ago)
@@ -125,10 +125,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -148,7 +148,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should process multiple items up to max limit (10 items) (AC: 4)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create 15 queue items (processor should process 10)
     for (let i = 0; i < 15; i++) {
@@ -167,10 +167,10 @@ describe('process-queue.ts', () => {
     }
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -188,7 +188,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should process queue items in order (oldest first) (AC: 4)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create queue items with specific timestamps
     const timestamps = [1000, 2000, 500, 1500, 3000];
@@ -205,10 +205,10 @@ describe('process-queue.ts', () => {
     }
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -230,7 +230,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should move failed items to failed/ directory (AC: 6)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // We need to test moveToFailed, but our stub processItem always succeeds
     // For this test, we'll manually test the moveToFailed function behavior
@@ -256,10 +256,10 @@ describe('process-queue.ts', () => {
 
     // For now, verify successful processing
     // TODO: In a real scenario, we'd inject a failure mode
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -272,7 +272,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should release lock in finally block (AC: 7)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
     const lockFile = join(queueDir, '.processor.lock');
 
     // Create queue item
@@ -287,10 +287,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -305,15 +305,15 @@ describe('process-queue.ts', () => {
   });
 
   test('should exit with code 0 when queue is empty (AC: 7)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // No queue items created - empty queue
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -327,7 +327,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should handle queue with mixed file types (ignore non-json) (AC: 4)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create valid queue item
     const queueItem = {
@@ -346,10 +346,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(join(queueDir, '.hidden.json'), '{}', 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -367,7 +367,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should log processing details with [Memory:Queue] prefix', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create test queue item
     const queueItem = {
@@ -382,10 +382,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -410,7 +410,7 @@ describe('process-queue.ts', () => {
     // We can't easily test the actual timeout firing without waiting 30s
     // Instead, we verify the code path exists and timeout is cleared
 
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create a single queue item
     const queueItem = {
@@ -424,10 +424,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor (should complete quickly, clearing timeout)
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -447,7 +447,7 @@ describe('process-queue.ts', () => {
   });
 
   test('should check retention policy after processing batch (AC 5)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create queue item to trigger processing
     const queueItem = {
@@ -461,10 +461,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -478,8 +478,8 @@ describe('process-queue.ts', () => {
   });
 
   test('should auto-consolidate old sessions when autoConsolidate=true (AC 3)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
-    const registryPath = join(TEST_PAI_DIR, 'mem-store', 'structured', 'session-registry.json');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
+    const registryPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'structured', 'session-registry.json');
 
     // Create session registry with 55 old sessions (exceeds shortTermMaxSessions: 50)
     const sessions: any = {};
@@ -497,7 +497,7 @@ describe('process-queue.ts', () => {
       };
     }
 
-    await fs.mkdir(join(TEST_PAI_DIR, 'mem-store', 'structured'), { recursive: true });
+    await fs.mkdir(join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'), { recursive: true });
     await fs.writeFile(registryPath, JSON.stringify({ sessions }, null, 2), 'utf-8');
 
     // Create queue item to trigger processing
@@ -512,10 +512,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -540,12 +540,12 @@ describe('process-queue.ts', () => {
   });
 
   test('should only log warning when autoConsolidate=false (AC 4)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
-    const registryPath = join(TEST_PAI_DIR, 'mem-store', 'structured', 'session-registry.json');
-    const settingsPath = join(TEST_PAI_DIR, '.claude', 'settings.json');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
+    const registryPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'structured', 'session-registry.json');
+    const settingsPath = join(TEST_MEMSTORE_DIR, '.claude', 'settings.json');
 
     // Create settings with autoConsolidate: false
-    await fs.mkdir(join(TEST_PAI_DIR, '.claude'), { recursive: true });
+    await fs.mkdir(join(TEST_MEMSTORE_DIR, '.claude'), { recursive: true });
     await fs.writeFile(settingsPath, JSON.stringify({
       memory: {
         enabled: true,
@@ -573,7 +573,7 @@ describe('process-queue.ts', () => {
       };
     }
 
-    await fs.mkdir(join(TEST_PAI_DIR, 'mem-store', 'structured'), { recursive: true });
+    await fs.mkdir(join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'), { recursive: true });
     await fs.writeFile(registryPath, JSON.stringify({ sessions }, null, 2), 'utf-8');
 
     // Create queue item
@@ -588,10 +588,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });
@@ -616,11 +616,11 @@ describe('process-queue.ts', () => {
   });
 
   test('should continue queue processing even if retention check fails (graceful degradation)', async () => {
-    const queueDir = join(TEST_PAI_DIR, 'mem-store', 'queue');
+    const queueDir = join(TEST_MEMSTORE_DIR, 'mem-store', 'queue');
 
     // Create invalid registry (malformed JSON) to trigger retention error
-    const registryPath = join(TEST_PAI_DIR, 'mem-store', 'structured', 'session-registry.json');
-    await fs.mkdir(join(TEST_PAI_DIR, 'mem-store', 'structured'), { recursive: true });
+    const registryPath = join(TEST_MEMSTORE_DIR, 'mem-store', 'structured', 'session-registry.json');
+    await fs.mkdir(join(TEST_MEMSTORE_DIR, 'mem-store', 'structured'), { recursive: true });
     await fs.writeFile(registryPath, 'invalid json{', 'utf-8');
 
     // Create queue item
@@ -635,10 +635,10 @@ describe('process-queue.ts', () => {
     await fs.writeFile(queueFile, JSON.stringify(queueItem, null, 2), 'utf-8');
 
     // Run processor
-    const processorPath = join(__dirname, '..', 'process-queue.ts');
+    const processorPath = join(__dirname, '..', 'src', 'hooks', 'process-queue.ts');
     const proc = spawn({
       cmd: ['bun', 'run', processorPath],
-      env: { ...process.env, PAI_DIR: TEST_PAI_DIR },
+      env: { ...process.env, MEMSTORE_DIR: TEST_MEMSTORE_DIR },
       stdout: 'pipe',
       stderr: 'pipe'
     });

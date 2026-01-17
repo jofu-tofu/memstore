@@ -6,23 +6,23 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { KeywordSearch } from '../providers/search/keyword-search';
-import { debugLog, isDebugEnabled, clearDebugCache, initDebugCache } from '../lib/debug-utils';
-import { clearConfigCache } from '../core/config';
-import { formatAge, formatTags } from '../lib/formatters';
+import { KeywordSearch } from '../src/providers/search/keyword-search';
+import { debugLog, isDebugEnabled, clearDebugCache, initDebugCache } from '../src/lib/debug-utils';
+import { clearConfigCache } from '../src/core/config';
+import { formatAge, formatTags } from '../src/lib/formatting/formatters';
 import { mkdtemp, rm, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
 describe('Debug Logging Integration', () => {
   let testDir: string;
-  let originalPaiDir: string | undefined;
+  let originalMemstoreDir: string | undefined;
 
   beforeEach(async () => {
     // Create temp directory for test
     testDir = await mkdtemp(join(tmpdir(), 'debug-integration-test-'));
-    originalPaiDir = process.env.PAI_DIR;
-    process.env.PAI_DIR = testDir;
+    originalMemstoreDir = process.env.MEMSTORE_DIR;
+    process.env.MEMSTORE_DIR = testDir;
 
     // Clear caches
     clearDebugCache();
@@ -45,10 +45,10 @@ describe('Debug Logging Integration', () => {
 
   afterEach(async () => {
     // Restore environment
-    if (originalPaiDir !== undefined) {
-      process.env.PAI_DIR = originalPaiDir;
+    if (originalMemstoreDir !== undefined) {
+      process.env.MEMSTORE_DIR = originalMemstoreDir;
     } else {
-      delete process.env.PAI_DIR;
+      delete process.env.MEMSTORE_DIR;
     }
 
     // Clean up
@@ -83,7 +83,7 @@ describe('Debug Logging Integration', () => {
     };
 
     // Execute keyword search
-    const searcher = new KeywordSearch({ paiDir: testDir });
+    const searcher = new KeywordSearch({ memstoreDir: testDir });
     await searcher.search('typescript hooks', { debug: true });
 
     console.error = originalError;
@@ -118,7 +118,7 @@ describe('Debug Logging Integration', () => {
     };
 
     // Execute keyword search
-    const searcher = new KeywordSearch({ paiDir: testDir });
+    const searcher = new KeywordSearch({ memstoreDir: testDir });
     await searcher.search('typescript hooks', { debug: false });
 
     console.error = originalError;
